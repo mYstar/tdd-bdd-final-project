@@ -20,6 +20,8 @@ Test Factory to make fake objects for testing
 import factory
 from factory.fuzzy import FuzzyChoice, FuzzyDecimal
 from service.models import Product, Category
+from faker import Faker
+import faker_commerce
 
 
 class ProductFactory(factory.Factory):
@@ -31,4 +33,9 @@ class ProductFactory(factory.Factory):
         model = Product
 
     id = factory.Sequence(lambda n: n)
-   ## Add code to create Fake Products 
+    description = factory.Faker('lorem').text(max_nb_chars=250)
+
+    def __init__(self):
+        self.fake = Faker()
+        fake.add_provider(faker_commerce.Provider)
+        self.name = fake.ecommerce_name()
