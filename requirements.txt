@@ -23,7 +23,6 @@ pinocchio==0.4.3
 factory-boy==3.2.1
 coverage==7.1.0
 httpie==3.2.1
-faker-commerce==1.0.3
 
 # Behavior Driven Development
 behave==1.2.6

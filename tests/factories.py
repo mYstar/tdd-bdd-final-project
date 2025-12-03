@@ -33,9 +33,15 @@ class ProductFactory(factory.Factory):
         model = Product
 
     id = factory.Sequence(lambda n: n)
-    description = factory.Faker('lorem').text(max_nb_chars=250)
-
-    def __init__(self):
-        self.fake = Faker()
-        fake.add_provider(faker_commerce.Provider)
-        self.name = fake.ecommerce_name()
+    name = factory.Faker('word')
+    description = factory.Faker('sentence', nb_words=10)
+    price = FuzzyDecimal(1.0, 100.0)
+    available = FuzzyChoice([True, False])
+    category = FuzzyChoice([
+        Category.UNKNOWN,
+        Category.CLOTHS,
+        Category.FOOD,
+        Category.HOUSEWARES,
+        Category.AUTOMOTIVE,
+        Category.TOOLS,
+    ])    
