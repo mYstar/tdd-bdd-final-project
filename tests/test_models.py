@@ -101,6 +101,77 @@ class TestProductModel(unittest.TestCase):
         self.assertEqual(new_product.available, product.available)
         self.assertEqual(new_product.category, product.category)
 
-    #
-    # ADD YOUR TEST CASES HERE
-    #
+    def test_read_product(self):
+        """tests that a previously created product can be read from the db"""
+        products = Product.all()
+        self.assertEqual(products, [])
+
+        product = ProductFactory()
+        product.id = None
+        product.create()
+
+        products = Product.all()
+        db_product = products[0]
+
+        self.assertEqual(product.name, db_product.name)
+        self.assertEqual(product.description, db_product.description)
+        self.assertEqual(product.price, db_product.price)
+        self.assertEqual(product.available, db_product.available)
+        self.assertEqual(product.category, db_product.category)
+
+    def test_update_product(self):
+        """tests that a product can be updated in the db"""
+        products = Product.all()
+        self.assertEqual(products, [])
+
+        product = ProductFactory()
+        product.id = None
+        product.create()
+        products = Product.all()
+        product = products[0]
+
+        product.name += ' new'
+        product.update()
+        products = Product.all()
+        db_product = products[0]
+
+        self.assertEqual(product.id, db_product.id)
+        self.assertEqual(product.name, db_product.name)
+        self.assertEqual(product.description, db_product.description)
+        self.assertEqual(product.price, db_product.price)
+        self.assertEqual(product.available, db_product.available)
+        self.assertEqual(product.category, db_product.category)
+
+    def test_delete_product(self):
+        """tests that a product can be deleted from the db"""
+        products = Product.all()
+        self.assertEqual(products, [])
+
+        product = ProductFactory()
+        product.id = None
+        product.create()
+        products = Product.all()
+        self.assertEqual(len(products), 1)
+        product.delete()
+        products = Product.all()
+        self.assertEqual(len(products), 0)
+
+    def test_list_all_product(self):
+        """tests that all products from the db can be listed"""
+        products = Product.all()
+        self.assertEqual(products, [])
+
+        product = ProductFactory()
+        product.id = None
+        product.create()
+        products = Product.all()
+        self.assertEqual(len(products), 1)
+        self.assertEqual(products[0], product)
+
+        product2 = ProductFactory()
+        product2.id = None
+        product2.create()
+        products = Product.all()
+        self.assertEqual(len(products), 2)
+        self.assertIn(product, products)
+        self.assertIn(product2, products)
