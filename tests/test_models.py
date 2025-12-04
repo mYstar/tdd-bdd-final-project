@@ -26,6 +26,7 @@ While debugging just these tests it's convenient to use this:
 import os
 import logging
 import unittest
+import copy
 from decimal import Decimal
 from service.models import Product, Category, db
 from service import app
@@ -65,6 +66,37 @@ class TestProductModel(unittest.TestCase):
     def tearDown(self):
         """This runs after each test"""
         db.session.remove()
+
+    def assertProductEquals(self, product1, product2):
+        self.assertEqual(product1.id, product2.id)
+        self.assertEqual(product1.name, product2.name)
+        self.assertEqual(product1.description, product2.description)
+        self.assertEqual(product1.available, product2.available)
+        self.assertEqual(product1.price, product2.price)
+        self.assertEqual(product1.category, product2.category)
+    
+    def productEquals(self, product1, product2):
+        if(product1.id != product2.id):
+            return False
+        if(product1.name != product2.name):
+            return False
+        if(product1.description != product2.description):
+            return False
+        if(product1.price != product2.price):
+            return False
+        if(product1.available != product2.available):
+            return False
+        if(product1.category != product2.category):
+            return False
+
+        return True
+
+    def assertProductIn(self, product, list):
+        for item in list:
+            if self.productEquals(product, item):
+                return True
+        
+        return False
 
     ######################################################################
     #  T E S T   C A S E S
@@ -108,16 +140,16 @@ class TestProductModel(unittest.TestCase):
 
         product = ProductFactory()
         product.id = None
+        app.logger.info("Creating product: " + str(product))
         product.create()
+        self.assertIsNotNone(product.id)
+        product = copy.deepcopy(product)
 
         products = Product.all()
         db_product = products[0]
+        app.logger.info("Fetched product: " + str(db_product))
 
-        self.assertEqual(product.name, db_product.name)
-        self.assertEqual(product.description, db_product.description)
-        self.assertEqual(product.price, db_product.price)
-        self.assertEqual(product.available, db_product.available)
-        self.assertEqual(product.category, db_product.category)
+        self.assertProductEquals(product, db_product)
 
     def test_update_product(self):
         """tests that a product can be updated in the db"""
@@ -126,21 +158,25 @@ class TestProductModel(unittest.TestCase):
 
         product = ProductFactory()
         product.id = None
+        app.logger.info("Creating product: " + str(product))
         product.create()
         products = Product.all()
         product = products[0]
 
-        product.name += ' new'
+        id_before = product.id
+        new_description = product.description + " new"
+        product.description = new_description
+        app.logger.info("Updating product: " + str(product))
         product.update()
-        products = Product.all()
-        db_product = products[0]
+        self.assertEqual(product.id, id_before)
+        self.assertEqual(product.description, new_description)
 
-        self.assertEqual(product.id, db_product.id)
-        self.assertEqual(product.name, db_product.name)
-        self.assertEqual(product.description, db_product.description)
-        self.assertEqual(product.price, db_product.price)
-        self.assertEqual(product.available, db_product.available)
-        self.assertEqual(product.category, db_product.category)
+        products = Product.all()
+        self.assertEqual(len(products), 1)
+        db_product = products[0]
+        app.logger.info("Fetched product: " + str(product))
+
+        self.assertProductEquals(product, db_product)
 
     def test_delete_product(self):
         """tests that a product can be deleted from the db"""
@@ -161,17 +197,45 @@ class TestProductModel(unittest.TestCase):
         products = Product.all()
         self.assertEqual(products, [])
 
+        created_products = []
+        for idx in range(5):
+            product = ProductFactory()
+            product.id = None
+            product.create()
+            created_products.append(product)
+
+            products = Product.all()
+            self.assertEqual(len(products), idx+1)
+            self.assertIn(product, products)
+
+        created_products[0].name = 'something'
+        for created_product in created_products:
+            self.assertProductIn(created_product, products)
+
+
+    def test_search_product_by_name(self):
+        """tests that a product can be found in the db by searching for its name"""
         product = ProductFactory()
         product.id = None
         product.create()
-        products = Product.all()
-        self.assertEqual(len(products), 1)
-        self.assertEqual(products[0], product)
 
-        product2 = ProductFactory()
-        product2.id = None
-        product2.create()
-        products = Product.all()
-        self.assertEqual(len(products), 2)
-        self.assertIn(product, products)
-        self.assertIn(product2, products)
+        db_products = Product.find_by_name(product.name)
+        self.assertIn(product, db_products)
+
+    def test_search_product_by_category(self):
+        """tests that a product can be found in the db by searching for its category"""
+        product = ProductFactory()
+        product.id = None
+        product.create()
+
+        db_products = Product.find_by_category(product.category)
+        self.assertIn(product, db_products)
+
+    def test_search_product_by_availability(self):
+        """tests that a product can be found in the db by searching for availability"""
+        product = ProductFactory()
+        product.id = None
+        product.create()
+
+        db_products = Product.find_by_availability(product.available)
+        self.assertIn(product, db_products)

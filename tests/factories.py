@@ -21,8 +21,6 @@ import factory
 from factory.fuzzy import FuzzyChoice, FuzzyDecimal
 from service.models import Product, Category
 from faker import Faker
-import faker_commerce
-
 
 class ProductFactory(factory.Factory):
     """Creates fake products for testing"""
