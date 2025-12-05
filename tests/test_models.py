@@ -28,7 +28,7 @@ import logging
 import unittest
 import copy
 from decimal import Decimal
-from service.models import Product, Category, db
+from service.models import Product, Category, db, DataValidationError
 from service import app
 from tests.factories import ProductFactory
 
@@ -68,35 +68,13 @@ class TestProductModel(unittest.TestCase):
         db.session.remove()
 
     def assertProductEquals(self, product1, product2):
+        """asserts that product1 has the same properties than product2"""
         self.assertEqual(product1.id, product2.id)
         self.assertEqual(product1.name, product2.name)
         self.assertEqual(product1.description, product2.description)
         self.assertEqual(product1.available, product2.available)
         self.assertEqual(product1.price, product2.price)
         self.assertEqual(product1.category, product2.category)
-    
-    def productEquals(self, product1, product2):
-        if(product1.id != product2.id):
-            return False
-        if(product1.name != product2.name):
-            return False
-        if(product1.description != product2.description):
-            return False
-        if(product1.price != product2.price):
-            return False
-        if(product1.available != product2.available):
-            return False
-        if(product1.category != product2.category):
-            return False
-
-        return True
-
-    def assertProductIn(self, product, list):
-        for item in list:
-            if self.productEquals(product, item):
-                return True
-        
-        return False
 
     ######################################################################
     #  T E S T   C A S E S
@@ -143,7 +121,6 @@ class TestProductModel(unittest.TestCase):
         app.logger.info("Creating product: " + str(product))
         product.create()
         self.assertIsNotNone(product.id)
-        product = copy.deepcopy(product)
 
         products = Product.all()
         db_product = products[0]
@@ -174,9 +151,20 @@ class TestProductModel(unittest.TestCase):
         products = Product.all()
         self.assertEqual(len(products), 1)
         db_product = products[0]
-        app.logger.info("Fetched product: " + str(product))
+        app.logger.info("Fetched product: " + str(db_product))
 
         self.assertProductEquals(product, db_product)
+
+    def test_update_product_with_empty_id(self):
+        """tests that an error is raised, when updating a procduct without id"""
+        product = ProductFactory()
+        product.id = None
+        app.logger.info("Creating product: " + str(product))
+        product.create()
+
+        product.id = None
+        app.logger.info("Updating product: " + str(product))
+        self.assertRaises(DataValidationError, product.update) 
 
     def test_delete_product(self):
         """tests that a product can be deleted from the db"""
@@ -208,9 +196,8 @@ class TestProductModel(unittest.TestCase):
             self.assertEqual(len(products), idx+1)
             self.assertIn(product, products)
 
-        created_products[0].name = 'something'
         for created_product in created_products:
-            self.assertProductIn(created_product, products)
+            self.assertIn(created_product, products)
 
 
     def test_search_product_by_name(self):
