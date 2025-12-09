@@ -199,6 +199,14 @@ class TestProductModel(unittest.TestCase):
         for created_product in created_products:
             self.assertIn(created_product, products)
 
+    def test_search_product_by_id(self):
+        """tests that a product can be found in the db by searching for its id"""
+        product = ProductFactory()
+        product.id = None
+        product.create()
+
+        db_product = Product.find(product.id)
+        self.assertProductEquals(product, db_product)
 
     def test_search_product_by_name(self):
         """tests that a product can be found in the db by searching for its name"""
@@ -207,6 +215,24 @@ class TestProductModel(unittest.TestCase):
         product.create()
 
         db_products = Product.find_by_name(product.name)
+        self.assertIn(product, db_products)
+
+    def test_search_product_by_price(self):
+        """tests that a product can be found in the db by searching for its price"""
+        product = ProductFactory()
+        product.id = None
+        product.create()
+
+        db_products = Product.find_by_price(product.price)
+        self.assertIn(product, db_products)
+
+    def test_search_product_by_string_price(self):
+        """tests that a product can be found in the db by searching for its price as a string"""
+        product = ProductFactory()
+        product.id = None
+        product.create()
+
+        db_products = Product.find_by_price('"'  + str(product.price) + ' "')
         self.assertIn(product, db_products)
 
     def test_search_product_by_category(self):
@@ -226,3 +252,71 @@ class TestProductModel(unittest.TestCase):
 
         db_products = Product.find_by_availability(product.available)
         self.assertIn(product, db_products)
+
+    def test_deserialize(self):
+        """tests if a Product can be created from a dict"""
+        values = {
+            "name": "Fedora", 
+            "description": "A red hat", 
+            "price": 12.50, 
+            "available": True, 
+            "category": "CLOTHS",
+        }
+        product = Product()
+        product.deserialize(values)
+
+        self.assertTrue(product is not None)
+        self.assertEqual(product.id, None)
+        self.assertEqual(product.name, "Fedora")
+        self.assertEqual(product.description, "A red hat")
+        self.assertEqual(product.price, 12.5)
+        self.assertEqual(product.available, True)
+        self.assertEqual(product.category, Category.CLOTHS)
+
+    def test_deserialize_data_validation_wrong_bool(self):
+        """tests if Product deserializaion raises an error if available is not bool"""
+        values = {
+            "name": "Fedora", 
+            "description": "A red hat", 
+            "price": 12.50, 
+            "available": "string", 
+            "category": "CLOTHS",
+        }
+        product = Product()
+
+        with self.assertRaises(DataValidationError):
+            product.deserialize(values)
+
+    def test_deserialize_data_validation_invalid_category(self):
+        """tests if Product deserializaion raises an error if category is not existing"""
+        values = {
+            "name": "Fedora", 
+            "description": "A red hat", 
+            "price": 12.50, 
+            "available": True, 
+            "category": "does not exist",
+        }
+        product = Product()
+
+        with self.assertRaises(DataValidationError):
+            product.deserialize(values)
+
+    def test_deserialize_data_validation_missing_value(self):
+        """tests if Product deserializaion raises an error if a value is missing"""
+        values = {
+            "name": "Fedora", 
+            "description": "A red hat", 
+            "price": 12.50, 
+            "available": True, 
+        }
+        product = Product()
+
+        with self.assertRaises(DataValidationError):
+            product.deserialize(values)
+
+    def test_deserialize_data_validation_no_data(self):
+        """tests if Product deserializaion raises an error no data is given"""
+        product = Product()
+
+        with self.assertRaises(DataValidationError):
+            product.deserialize(None)
