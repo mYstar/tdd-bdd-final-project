@@ -27,7 +27,9 @@ Test cases can be run with the following:
 import os
 import logging
 from decimal import Decimal
+from flask import abort
 from unittest import TestCase
+from unittest.mock import patch
 from service import app
 from service.common import status
 from service.models import db, init_db, Product
@@ -163,9 +165,23 @@ class TestProductRoutes(TestCase):
         response = self.client.post(BASE_URL, data={}, content_type="plain/text")
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
-    #
-    # ADD YOUR TEST CASES HERE
-    #
+    def test_non_existing_route(self):
+        """It should return an 404 error on nonexisting route"""
+        response = self.client.get("/not-existing")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_non_existing_method(self):
+        """It should return an 405 error on nonexisting method for a route"""
+        response = self.client.delete(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @patch('service.routes.check_content_type')
+    def test_internal_server_error(self, mock_func):
+        """It should return an HTTP 500 error on internal error"""
+        mock_func.side_effect = lambda type: abort(500, "Mocked Internal Error Text")
+        response = self.client.post(BASE_URL, data={})
+
+        self.assertEqual(response.status_code, 500)
 
     ######################################################################
     # Utility functions

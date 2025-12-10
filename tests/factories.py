@@ -20,7 +20,7 @@ Test Factory to make fake objects for testing
 import factory
 from factory.fuzzy import FuzzyChoice, FuzzyDecimal
 from service.models import Product, Category
-from faker import Faker
+
 
 class ProductFactory(factory.Factory):
     """Creates fake products for testing"""
@@ -42,4 +42,4 @@ class ProductFactory(factory.Factory):
         Category.HOUSEWARES,
         Category.AUTOMOTIVE,
         Category.TOOLS,
-    ])    
+    ])
