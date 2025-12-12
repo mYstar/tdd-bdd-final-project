@@ -132,19 +132,15 @@ class TestProductRoutes(TestCase):
         self.assertEqual(new_product["available"], test_product.available)
         self.assertEqual(new_product["category"], test_product.category.name)
 
-        #
-        # Uncomment this code once READ is implemented
-        #
-
-        # # Check that the location header was correct
-        # response = self.client.get(location)
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # new_product = response.get_json()
-        # self.assertEqual(new_product["name"], test_product.name)
-        # self.assertEqual(new_product["description"], test_product.description)
-        # self.assertEqual(Decimal(new_product["price"]), test_product.price)
-        # self.assertEqual(new_product["available"], test_product.available)
-        # self.assertEqual(new_product["category"], test_product.category.name)
+        # Check that the location header was correct
+        response = self.client.get(location)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        new_product = response.get_json()
+        self.assertEqual(new_product["name"], test_product.name)
+        self.assertEqual(new_product["description"], test_product.description)
+        self.assertEqual(Decimal(new_product["price"]), test_product.price)
+        self.assertEqual(new_product["available"], test_product.available)
+        self.assertEqual(new_product["category"], test_product.category.name)
 
     def test_create_product_with_no_name(self):
         """It should not Create a Product without a name"""
@@ -183,6 +179,74 @@ class TestProductRoutes(TestCase):
 
         self.assertEqual(response.status_code, 500)
 
+    # ----------------------------------------------------------
+    # TEST READ
+    # ----------------------------------------------------------
+    def test_read_product(self):
+        """It should read an existing product from the db"""
+        test_product = (self._create_products())[0]
+        product_url = BASE_URL + '/' + str(test_product.id)
+        response = self.client.get(product_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Check the data is correct
+        db_product = response.get_json()
+        self.assertEqual(db_product["name"], test_product.name)
+        self.assertEqual(db_product["description"], test_product.description)
+        self.assertEqual(Decimal(db_product["price"]), test_product.price)
+        self.assertEqual(db_product["available"], test_product.available)
+        self.assertEqual(db_product["category"], test_product.category.name)
+
+    def test_read_nonexisting_product(self):
+        """It should throw an error when trying to read a nonexisting product"""
+        product_url = BASE_URL + '/0'
+        response = self.client.get(product_url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    # ----------------------------------------------------------
+    # TEST UPDATE
+    # ----------------------------------------------------------
+    def test_update_product(self):
+        """It should update an existing product in the db"""
+        test_product = (self._create_products())[0]
+        product_url = BASE_URL + '/' + str(test_product.id)
+
+        new_name = test_product.name + '_test'
+        data = test_product.serialize()
+        data["name"] = new_name
+
+        response = self.client.post(product_url, json=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_data = response.get_json()
+        self.assertEqual(updated_data["name"], new_name)
+
+        response = self.client.get(product_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        updated_product = response.get_json()
+        self.assertEqual(updated_product["name"], new_name)
+
+    def test_update_nonexisting_product(self):
+        """It should give an 404 when trying to update an non-existing product"""
+        test_product = (self._create_products())[0]
+        product_url = BASE_URL + '/0'
+
+        data = test_product.serialize()
+
+        response = self.client.post(product_url, json=data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_invalid_data(self):
+        """It should give an 400 when trying to update with invalid data"""
+        test_product = (self._create_products())[0]
+        product_url = BASE_URL + '/' + str(test_product.id)
+
+        invalid_data = test_product.serialize()
+        invalid_data["available"] = 'wrong type'
+        response = self.client.post(product_url, json=invalid_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     ######################################################################
     # Utility functions
     ######################################################################
@@ -192,5 +256,5 @@ class TestProductRoutes(TestCase):
         response = self.client.get(BASE_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
-        # logging.debug("data = %s", data)
+        logging.debug("data = %s", data)
         return len(data)

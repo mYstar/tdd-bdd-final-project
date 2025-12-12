@@ -86,11 +86,7 @@ def create_products():
 
     message = product.serialize()
 
-    #
-    # Uncomment this line of code once you implement READ A PRODUCT
-    #
-    # location_url = url_for("get_products", product_id=product.id, _external=True)
-    location_url = "/"  # delete once READ is implemented
+    location_url = url_for("get_products", id=product.id, _external=True)
     return jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
 
 
@@ -106,17 +102,52 @@ def create_products():
 # R E A D   A   P R O D U C T
 ######################################################################
 
-#
-# PLACE YOUR CODE HERE TO READ A PRODUCT
-#
+@app.route("/products/<id>", methods=["GET"])
+def get_products(id):
+    """
+    Reads a Product from the db
+    This endpoint will read a product from the database using the given id.
+    """
+    app.logger.info(f"Request to Read Product with id: {id}")
+
+    product = Product.find(id)
+    if product is None:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Product with id: {id} does not exist",
+        )
+    message = product.serialize()
+
+    return jsonify(message), status.HTTP_200_OK
 
 ######################################################################
 # U P D A T E   A   P R O D U C T
 ######################################################################
 
-#
-# PLACE YOUR CODE TO UPDATE A PRODUCT HERE
-#
+@app.route("/products/<id>", methods=["POST"])
+def update_products(id):
+    """
+    Updated a Product
+    This endpoint will update an existing Product 
+    based on the data in the body that is posted.
+    """
+    app.logger.info(f"Request to update Product with id: {id}")
+    check_content_type("application/json")
+
+    data = request.get_json()
+    app.logger.info("Processing: %s", data)
+    product = Product.find(id)
+    if product is None:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Product with id: {id} does not exist",
+        )
+    product.deserialize(data)
+    product.update()
+
+    message = product.serialize()
+    return jsonify(message), status.HTTP_200_OK
+
 
 ######################################################################
 # D E L E T E   A   P R O D U C T
