@@ -26,7 +26,6 @@ While debugging just these tests it's convenient to use this:
 import os
 import logging
 import unittest
-import copy
 from decimal import Decimal
 from service.models import Product, Category, db, DataValidationError
 from service import app
@@ -67,7 +66,7 @@ class TestProductModel(unittest.TestCase):
         """This runs after each test"""
         db.session.remove()
 
-    def assertProductEquals(self, product1, product2):
+    def assert_product_equals(self, product1, product2):
         """asserts that product1 has the same properties than product2"""
         self.assertEqual(product1.id, product2.id)
         self.assertEqual(product1.name, product2.name)
@@ -126,7 +125,7 @@ class TestProductModel(unittest.TestCase):
         db_product = products[0]
         app.logger.info("Fetched product: " + str(db_product))
 
-        self.assertProductEquals(product, db_product)
+        self.assert_product_equals(product, db_product)
 
     def test_update_product(self):
         """tests that a product can be updated in the db"""
@@ -153,7 +152,7 @@ class TestProductModel(unittest.TestCase):
         db_product = products[0]
         app.logger.info("Fetched product: " + str(db_product))
 
-        self.assertProductEquals(product, db_product)
+        self.assert_product_equals(product, db_product)
 
     def test_update_product_with_empty_id(self):
         """tests that an error is raised, when updating a procduct without id"""
@@ -164,7 +163,7 @@ class TestProductModel(unittest.TestCase):
 
         product.id = None
         app.logger.info("Updating product: " + str(product))
-        self.assertRaises(DataValidationError, product.update) 
+        self.assertRaises(DataValidationError, product.update)
 
     def test_delete_product(self):
         """tests that a product can be deleted from the db"""
@@ -206,25 +205,45 @@ class TestProductModel(unittest.TestCase):
         product.create()
 
         db_product = Product.find(product.id)
-        self.assertProductEquals(product, db_product)
+        self.assert_product_equals(product, db_product)
 
     def test_search_product_by_name(self):
         """tests that a product can be found in the db by searching for its name"""
-        product = ProductFactory()
-        product.id = None
-        product.create()
+        products = []
+        for _ in range(5):
+            product = ProductFactory()
+            product.id = None
+            product.create()
+            products.append(product)
 
-        db_products = Product.find_by_name(product.name)
-        self.assertIn(product, db_products)
+        name = products[0].name
+        products_with_name = [p for p in products if p.name == name]
+        count = len(products_with_name)
+
+        db_products = Product.find_by_name(name)
+
+        self.assertEqual(db_products.count(), count)
+        for db_product in db_products:
+            self.assertEqual(db_product.name, name)
 
     def test_search_product_by_price(self):
         """tests that a product can be found in the db by searching for its price"""
-        product = ProductFactory()
-        product.id = None
-        product.create()
+        products = []
+        for _ in range(5):
+            product = ProductFactory()
+            product.id = None
+            product.create()
+            products.append(product)
 
-        db_products = Product.find_by_price(product.price)
-        self.assertIn(product, db_products)
+        price = products[0].price
+        products_with_price = [p for p in products if p.price == price]
+        count = len(products_with_price)
+
+        db_products = Product.find_by_price(price)
+
+        self.assertEqual(db_products.count(), count)
+        for db_product in db_products:
+            self.assertEqual(db_product.price, price)
 
     def test_search_product_by_string_price(self):
         """tests that a product can be found in the db by searching for its price as a string"""
@@ -232,34 +251,54 @@ class TestProductModel(unittest.TestCase):
         product.id = None
         product.create()
 
-        db_products = Product.find_by_price('"'  + str(product.price) + ' "')
+        db_products = Product.find_by_price('"' + str(product.price) + ' "')
         self.assertIn(product, db_products)
 
     def test_search_product_by_category(self):
         """tests that a product can be found in the db by searching for its category"""
-        product = ProductFactory()
-        product.id = None
-        product.create()
+        products = []
+        for _ in range(10):
+            product = ProductFactory()
+            product.id = None
+            product.create()
+            products.append(product)
 
-        db_products = Product.find_by_category(product.category)
-        self.assertIn(product, db_products)
+        category = products[0].category
+        products_with_category = [p for p in products if p.category == category]
+        count = len(products_with_category)
+
+        db_products = Product.find_by_category(category)
+
+        self.assertEqual(db_products.count(), count)
+        for db_product in db_products:
+            self.assertEqual(db_product.category, category)
 
     def test_search_product_by_availability(self):
         """tests that a product can be found in the db by searching for availability"""
-        product = ProductFactory()
-        product.id = None
-        product.create()
+        products = []
+        for _ in range(10):
+            product = ProductFactory()
+            product.id = None
+            product.create()
+            products.append(product)
 
-        db_products = Product.find_by_availability(product.available)
-        self.assertIn(product, db_products)
+        available = products[0].available
+        available_products = [p for p in products if p.available == available]
+        count = len(available_products)
+
+        db_products = Product.find_by_availability(available)
+
+        self.assertEqual(db_products.count(), count)
+        for db_product in db_products:
+            self.assertEqual(db_product.available, available)
 
     def test_deserialize(self):
         """tests if a Product can be created from a dict"""
         values = {
-            "name": "Fedora", 
-            "description": "A red hat", 
-            "price": 12.50, 
-            "available": True, 
+            "name": "Fedora",
+            "description": "A red hat",
+            "price": 12.50,
+            "available": True,
             "category": "CLOTHS",
         }
         product = Product()
@@ -276,10 +315,10 @@ class TestProductModel(unittest.TestCase):
     def test_deserialize_data_validation_wrong_bool(self):
         """tests if Product deserializaion raises an error if available is not bool"""
         values = {
-            "name": "Fedora", 
-            "description": "A red hat", 
-            "price": 12.50, 
-            "available": "string", 
+            "name": "Fedora",
+            "description": "A red hat",
+            "price": 12.50,
+            "available": "string",
             "category": "CLOTHS",
         }
         product = Product()
@@ -290,10 +329,10 @@ class TestProductModel(unittest.TestCase):
     def test_deserialize_data_validation_invalid_category(self):
         """tests if Product deserializaion raises an error if category is not existing"""
         values = {
-            "name": "Fedora", 
-            "description": "A red hat", 
-            "price": 12.50, 
-            "available": True, 
+            "name": "Fedora",
+            "description": "A red hat",
+            "price": 12.50,
+            "available": True,
             "category": "does not exist",
         }
         product = Product()
@@ -304,10 +343,10 @@ class TestProductModel(unittest.TestCase):
     def test_deserialize_data_validation_missing_value(self):
         """tests if Product deserializaion raises an error if a value is missing"""
         values = {
-            "name": "Fedora", 
-            "description": "A red hat", 
-            "price": 12.50, 
-            "available": True, 
+            "name": "Fedora",
+            "description": "A red hat",
+            "price": 12.50,
+            "available": True,
         }
         product = Product()
 

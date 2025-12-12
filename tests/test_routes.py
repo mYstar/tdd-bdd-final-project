@@ -27,9 +27,9 @@ Test cases can be run with the following:
 import os
 import logging
 from decimal import Decimal
-from flask import abort
 from unittest import TestCase
 from unittest.mock import patch
+from flask import abort
 from service import app
 from service.common import status
 from service.models import db, init_db, Product
