@@ -30,9 +30,10 @@ from decimal import Decimal
 from unittest import TestCase
 from unittest.mock import patch
 from flask import abort
+from urllib.parse import quote_plus
 from service import app
 from service.common import status
-from service.models import db, init_db, Product
+from service.models import db, init_db, Product, Category
 from tests.factories import ProductFactory
 
 # Disable all but critical errors during normal test run
@@ -246,6 +247,126 @@ class TestProductRoutes(TestCase):
         invalid_data["available"] = 'wrong type'
         response = self.client.post(product_url, json=invalid_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    # ----------------------------------------------------------
+    # TEST DELETE
+    # ----------------------------------------------------------
+    def test_delete_product(self):
+        """It should delete an existing product from the db"""
+        test_product = (self._create_products())[0]
+        product_url = BASE_URL + '/' + str(test_product.id)
+
+        response = self.client.delete(product_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        response = self.client.get(product_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
+    def test_delete_non_existing_product(self):
+        """It should throw an error, when trying to delete a non-existing product from the db"""
+        product_url = BASE_URL + '/0'
+
+        response = self.client.delete(product_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    # ----------------------------------------------------------
+    # TEST LIST ALL
+    # ----------------------------------------------------------
+    def test_list_all_products(self):
+        """It should list all products in the database, on get request on the base url"""
+        product_count = 10
+        self._create_products(product_count)
+
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), product_count)
+
+    def test_list_all_products_empty_db(self):
+        response = self.client.get(BASE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.get_json()
+        self.assertEqual(len(data), 0)
+
+    # ----------------------------------------------------------
+    # TEST LIST BY NAME
+    # ----------------------------------------------------------
+    def test_list_by_name(self):
+        """It should list all products in the database, that have a specific name"""
+        total_products = 10
+        named_products = 4
+        test_name = "specific name"
+
+        products = self._create_products(total_products)
+        for idx in range(named_products):
+            product = products[idx]
+            product.name = test_name
+            product_data = product.serialize()
+            product_url = BASE_URL + "/" + str(product.id)
+            self.client.post(product_url, json=product_data)
+
+        url = BASE_URL + "?name=" + quote_plus(test_name)
+        response = self.client.get(url)
+        data = response.get_json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), named_products)
+        
+    def test_list_by_name_nothing_found(self):
+        total_products = 10
+        test_name = "nonexisting product name"
+
+        products = self._create_products(total_products)
+        url = BASE_URL + "?name=" + quote_plus(test_name)
+        response = self.client.get(url)
+        data = response.get_json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 0)
+
+    # ----------------------------------------------------------
+    # TEST LIST BY CATEGORY
+    # ----------------------------------------------------------
+    def test_list_by_category(self):
+        """It should list all products in the database, that have a specific category"""
+        total_products = 50
+
+        products = self._create_products(total_products)
+        food_products = [p for p in products if p.category == Category.FOOD]
+
+        url = BASE_URL + "?category=" + str(Category.FOOD.value)
+        response = self.client.get(url)
+        data = response.get_json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), len(food_products))
+        
+    def test_list_by_category_nothing_found(self):
+        url = BASE_URL + "?category=" + str(Category.FOOD.value)
+        response = self.client.get(url)
+        data = response.get_json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 0)
+
+    # ----------------------------------------------------------
+    # TEST LIST BY AVAILABILITY
+    # ----------------------------------------------------------
+    def test_list_by_availablility(self):
+        """It should list all products in the database, that have a specific availability"""
+        total_products = 20
+
+        products = self._create_products(total_products)
+        available_products = [p for p in products if p.available == True]
+
+        url = BASE_URL + "?available=" + str(True)
+        response = self.client.get(url)
+        data = response.get_json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), len(available_products))
+        
+    def test_list_by_available_nothing_found(self):
+        url = BASE_URL + "?available=" + str(False)
+        response = self.client.get(url)
+        data = response.get_json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(data), 0)
 
     ######################################################################
     # Utility functions

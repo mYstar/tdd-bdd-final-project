@@ -20,7 +20,7 @@ Product Store Service with UI
 """
 from flask import jsonify, request, abort
 from flask import url_for  # noqa: F401 pylint: disable=unused-import
-from service.models import Product
+from service.models import Product, Category
 from service.common import status  # HTTP Status Codes
 from . import app
 
@@ -91,12 +91,28 @@ def create_products():
 
 
 ######################################################################
-# L I S T   A L L   P R O D U C T S
+# L I S T   P R O D U C T S
 ######################################################################
 
-#
-# PLACE YOUR CODE TO LIST ALL PRODUCTS HERE
-#
+@app.route("/products", methods=["GET"])
+def list_products():
+    app.logger.info("Request to List Products...")
+
+    arguments = request.args.to_dict()
+
+    if 'name' in arguments:
+        products = Product.find_by_name(arguments["name"])
+    elif 'category' in arguments:
+        category = Category(int(arguments["category"]))
+        products = Product.find_by_category(category)
+    elif 'available' in arguments:
+        available = bool(arguments["available"])
+        products = Product.find_by_availability(available)
+    else:
+        products = Product.all()
+    
+    products_data = [p.serialize() for p in products]
+    return jsonify(products_data), status.HTTP_200_OK
 
 ######################################################################
 # R E A D   A   P R O D U C T
@@ -154,6 +170,20 @@ def update_products(id):
 ######################################################################
 
 
-#
-# PLACE YOUR CODE TO DELETE A PRODUCT HERE
-#
+@app.route("/products/<id>", methods=["DELETE"])
+def delete_products(id):
+    """
+    Delete a Product
+    This endpoint will delete an existing Product 
+    with the given id from the database.
+    """
+    app.logger.info(f"Request to delete Product with id: {id}")
+    product = Product.find(id)
+    if product is None:
+        abort(
+            status.HTTP_404_NOT_FOUND,
+            f"Product with id: {id} does not exist",
+        )
+    product.delete()
+    return '', status.HTTP_204_NO_CONTENT
+    
