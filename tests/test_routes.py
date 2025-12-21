@@ -218,7 +218,7 @@ class TestProductRoutes(TestCase):
         data = test_product.serialize()
         data["name"] = new_name
 
-        response = self.client.post(product_url, json=data)
+        response = self.client.put(product_url, json=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         updated_data = response.get_json()
         self.assertEqual(updated_data["name"], new_name)
@@ -235,7 +235,7 @@ class TestProductRoutes(TestCase):
 
         data = test_product.serialize()
 
-        response = self.client.post(product_url, json=data)
+        response = self.client.put(product_url, json=data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_update_invalid_data(self):
@@ -245,7 +245,7 @@ class TestProductRoutes(TestCase):
 
         invalid_data = test_product.serialize()
         invalid_data["available"] = 'wrong type'
-        response = self.client.post(product_url, json=invalid_data)
+        response = self.client.put(product_url, json=invalid_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     # ----------------------------------------------------------
@@ -303,7 +303,7 @@ class TestProductRoutes(TestCase):
             product.name = test_name
             product_data = product.serialize()
             product_url = BASE_URL + "/" + str(product.id)
-            self.client.post(product_url, json=product_data)
+            self.client.put(product_url, json=product_data)
 
         url = BASE_URL + "?name=" + quote_plus(test_name)
         response = self.client.get(url)
