@@ -46,6 +46,7 @@ def step_impl(context, message):
     """ Check the document title for a message """
     assert(message in context.driver.title)
 
+
 @then('I should not see "{text_string}"')
 def step_impl(context, text_string):
     element = context.driver.find_element(By.TAG_NAME, 'body')
@@ -131,6 +132,17 @@ def step_impl(context, text_string, element_name):
     )
     assert(found)
 
+@then('I should see "{text_string}" in the "{element_name}" element')
+def step_impl(context, text_string, element_name):
+    element_id = element_name.lower().replace(' ', '_')
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element(
+            (By.ID, element_id),
+            text_string
+        )
+    )
+    assert(found)
+
 @then('I should see the message "{message}"')
 def step_impl(context, message):
     found = WebDriverWait(context.driver, context.wait_seconds).until(
@@ -148,3 +160,14 @@ def step_impl(context, element_name, text_string):
     )
     element.clear()
     element.send_keys(text_string)
+
+@then('I should see {number} items in the "{table_name}"')
+def step_impl(context, number, table_name):
+    table_id = table_name.lower().replace(' ', '_')
+
+    table = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.presence_of_element_located((By.ID, table_id))
+    )
+    rows = table.find_elements(By.TAG_NAME, "tr")
+    print(len(rows))
+    assert len(rows) == int(number) + 1 # to account for the table head

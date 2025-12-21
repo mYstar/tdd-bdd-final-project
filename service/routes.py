@@ -103,7 +103,7 @@ def list_products():
     if 'name' in arguments:
         products = Product.find_by_name(arguments["name"])
     elif 'category' in arguments:
-        category = Category(int(arguments["category"]))
+        category = Category[arguments["category"]]
         products = Product.find_by_category(category)
     elif 'available' in arguments:
         available = bool(arguments["available"])

@@ -84,3 +84,13 @@ Scenario:
     And I press the "Search" button
     Then I should not see "A red fedora"
     
+Scenario:
+    When I visit the "Home Page"
+    And I press the "Clear" button
+    And I press the "Search" button
+    Then I should see the message "Success"
+    Then I should see 4 items in the "Search Results"
+    And I should see "Hat" in the "Search Results" element
+    And I should see "Shoes" in the "Search Results" element
+    And I should see "Big Mac" in the "Search Results" element
+    And I should see "Sheets" in the "Search Results" element

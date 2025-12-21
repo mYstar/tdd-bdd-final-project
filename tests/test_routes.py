@@ -332,14 +332,14 @@ class TestProductRoutes(TestCase):
         products = self._create_products(total_products)
         food_products = [p for p in products if p.category == Category.FOOD]
 
-        url = BASE_URL + "?category=" + str(Category.FOOD.value)
+        url = BASE_URL + "?category=" + str(Category.FOOD.name)
         response = self.client.get(url)
         data = response.get_json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(data), len(food_products))
         
     def test_list_by_category_nothing_found(self):
-        url = BASE_URL + "?category=" + str(Category.FOOD.value)
+        url = BASE_URL + "?category=" + str(Category.FOOD.name)
         response = self.client.get(url)
         data = response.get_json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
