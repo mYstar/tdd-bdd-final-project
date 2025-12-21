@@ -31,6 +31,7 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions
 
 ID_PREFIX = 'product_'
+BTN_SUFFIX = '-btn'
 
 
 @when('I visit the "Home Page"')
@@ -104,7 +105,13 @@ def step_impl(context, element_name):
 # to get the element id of any button
 ##################################################################
 
-## UPDATE CODE HERE ##
+@when('I press the "{button_name}" button')
+def step_impl(context, button_name):
+    button_id = button_name.lower().replace(' ', '_') + BTN_SUFFIX
+    button = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.presence_of_element_located((By.ID, button_id))
+    )
+    button.click()
 
 ##################################################################
 # This code works because of the following naming convention:
@@ -123,6 +130,15 @@ def step_impl(context, text_string, element_name):
         )
     )
     assert(found)
+
+@then('I should see the message "{message}"')
+def step_impl(context, message):
+    found = WebDriverWait(context.driver, context.wait_seconds).until(
+        expected_conditions.text_to_be_present_in_element(
+            (By.ID, 'flash_message'),
+            message
+        )
+    )
 
 @when('I change "{element_name}" to "{text_string}"')
 def step_impl(context, element_name, text_string):
