@@ -39,7 +39,7 @@ Scenario: Create a Product
     And I should see "Tools" in the "Category" dropdown
     And I should see "34.95" in the "Price" field
 
-Scenario:
+Scenario: Read a Product
     When I visit the "Home Page"
     And I set the "Name" to "Hat"
     And I press the "Search" button
@@ -55,7 +55,7 @@ Scenario:
     And I should see "Cloths" in the "Category" dropdown
     And I should see "59.95" in the "Price" field
 
-Scenario:
+Scenario: Update a Product
     When I visit the "Home Page"
     And I set the "Name" to "Hat"
     And I press the "Search" button
@@ -72,25 +72,66 @@ Scenario:
     And I should see "Hat" in the "Name" field
     And I should see "I have a new hat" in the "Description" field
 
-Scenario:
+Scenario: Delete a product
     When I visit the "Home Page"
     And I set the "Name" to "Hat"
     And I press the "Search" button
     Then I should see the message "Success"
     And I should see "A red fedora" in the "Description" field
+    When I copy the "Id" field
+    And I press the "Clear" button
+    And I paste the "Id" field
+    And I press the "Retrieve" button
+    Then I should see the message "Success"
     When I press the "Delete" button
     Then I should see the message "Product has been Deleted!"
     When I press the "Clear" button
     And I press the "Search" button
-    Then I should not see "A red fedora"
+    Then I should not see "A red fedora" in the "Search Results" element
     
-Scenario:
+Scenario: List all Products
     When I visit the "Home Page"
     And I press the "Clear" button
     And I press the "Search" button
     Then I should see the message "Success"
-    Then I should see 4 items in the "Search Results"
+    And I should see 4 items in the "Search Results"
     And I should see "Hat" in the "Search Results" element
     And I should see "Shoes" in the "Search Results" element
     And I should see "Big Mac" in the "Search Results" element
     And I should see "Sheets" in the "Search Results" element
+
+Scenario: Search Product based on Category
+    When I visit the "Home Page"
+    And I press the "Clear" button
+    And I select "Cloths" in the "Category" dropdown
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see 2 items in the "Search Results"
+    And I should see "Hat" in the "Search Results" element
+    And I should see "Shoes" in the "Search Results" element
+    And I should not see "Big Mac" in the "Search Results" element
+    And I should not see "Sheets" in the "Search Results" element
+
+Scenario: Search Product based on Availability
+    When I visit the "Home Page"
+    And I press the "Clear" button
+    And I select "True" in the "Available" dropdown
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see 3 items in the "Search Results"
+    And I should see "Hat" in the "Search Results" element
+    And I should not see "Shoes" in the "Search Results" element
+    And I should see "Big Mac" in the "Search Results" element
+    And I should see "Sheets" in the "Search Results" element
+
+Scenario: Search Product based on Name
+    When I visit the "Home Page"
+    And I press the "Clear" button
+    And I set the "Name" to "Hat"
+    And I press the "Search" button
+    Then I should see the message "Success"
+    And I should see 1 items in the "Search Results"
+    And I should see "Hat" in the "Search Results" element
+    And I should not see "Shoes" in the "Search Results" element
+    And I should not see "Big Mac" in the "Search Results" element
+    And I should not see "Sheets" in the "Search Results" element
