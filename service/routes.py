@@ -86,7 +86,7 @@ def create_products():
 
     message = product.serialize()
 
-    location_url = url_for("get_products", id=product.id, _external=True)
+    location_url = url_for("get_products", product_id=product.id, _external=True)
     return jsonify(message), status.HTTP_201_CREATED, {"Location": location_url}
 
 
@@ -96,6 +96,10 @@ def create_products():
 
 @app.route("/products", methods=["GET"])
 def list_products():
+    """
+    List all Products
+    This endpoint will read all Products from the database and return them.
+    """
     app.logger.info("Request to List Products...")
 
     arguments = request.args.to_dict()
@@ -110,7 +114,7 @@ def list_products():
         products = Product.find_by_availability(available)
     else:
         products = Product.all()
-    
+
     products_data = [p.serialize() for p in products]
     return jsonify(products_data), status.HTTP_200_OK
 
@@ -118,19 +122,20 @@ def list_products():
 # R E A D   A   P R O D U C T
 ######################################################################
 
-@app.route("/products/<id>", methods=["GET"])
-def get_products(id):
+
+@app.route("/products/<product_id>", methods=["GET"])
+def get_products(product_id):
     """
     Reads a Product from the db
     This endpoint will read a product from the database using the given id.
     """
-    app.logger.info(f"Request to Read Product with id: {id}")
+    app.logger.info(f"Request to Read Product with id: {product_id}")
 
-    product = Product.find(id)
+    product = Product.find(product_id)
     if product is None:
         abort(
             status.HTTP_404_NOT_FOUND,
-            f"Product with id: {id} does not exist",
+            f"Product with id: {product_id} does not exist",
         )
     message = product.serialize()
 
@@ -140,23 +145,24 @@ def get_products(id):
 # U P D A T E   A   P R O D U C T
 ######################################################################
 
-@app.route("/products/<id>", methods=["PUT"])
-def update_products(id):
+
+@app.route("/products/<product_id>", methods=["PUT"])
+def update_products(product_id):
     """
     Updated a Product
-    This endpoint will update an existing Product 
+    This endpoint will update an existing Product
     based on the data in the body that is posted.
     """
-    app.logger.info(f"Request to update Product with id: {id}")
+    app.logger.info(f"Request to update Product with id: {product_id}")
     check_content_type("application/json")
 
     data = request.get_json()
     app.logger.info("Processing: %s", data)
-    product = Product.find(id)
+    product = Product.find(product_id)
     if product is None:
         abort(
             status.HTTP_404_NOT_FOUND,
-            f"Product with id: {id} does not exist",
+            f"Product with id: {product_id} does not exist",
         )
     product.deserialize(data)
     product.update()
@@ -170,20 +176,19 @@ def update_products(id):
 ######################################################################
 
 
-@app.route("/products/<id>", methods=["DELETE"])
-def delete_products(id):
+@app.route("/products/<product_id>", methods=["DELETE"])
+def delete_products(product_id):
     """
     Delete a Product
-    This endpoint will delete an existing Product 
+    This endpoint will delete an existing Product
     with the given id from the database.
     """
-    app.logger.info(f"Request to delete Product with id: {id}")
-    product = Product.find(id)
+    app.logger.info(f"Request to delete Product with id: {product_id}")
+    product = Product.find(product_id)
     if product is None:
         abort(
             status.HTTP_404_NOT_FOUND,
-            f"Product with id: {id} does not exist",
+            f"Product with id: {product_id} does not exist",
         )
     product.delete()
     return '', status.HTTP_204_NO_CONTENT
-    

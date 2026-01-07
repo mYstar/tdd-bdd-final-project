@@ -29,8 +29,8 @@ import logging
 from decimal import Decimal
 from unittest import TestCase
 from unittest.mock import patch
-from flask import abort
 from urllib.parse import quote_plus
+from flask import abort
 from service import app
 from service.common import status
 from service.models import db, init_db, Product, Category
@@ -261,7 +261,7 @@ class TestProductRoutes(TestCase):
 
         response = self.client.get(product_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        
+
     def test_delete_non_existing_product(self):
         """It should throw an error, when trying to delete a non-existing product from the db"""
         product_url = BASE_URL + '/0'
@@ -283,6 +283,7 @@ class TestProductRoutes(TestCase):
         self.assertEqual(len(data), product_count)
 
     def test_list_all_products_empty_db(self):
+        """It should return an empty list, if the database is empty"""
         response = self.client.get(BASE_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.get_json()
@@ -310,12 +311,13 @@ class TestProductRoutes(TestCase):
         data = response.get_json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(data), named_products)
-        
+
     def test_list_by_name_nothing_found(self):
+        """It should return an empty list, if product name does not exist"""
         total_products = 10
         test_name = "nonexisting product name"
 
-        products = self._create_products(total_products)
+        self._create_products(total_products)
         url = BASE_URL + "?name=" + quote_plus(test_name)
         response = self.client.get(url)
         data = response.get_json()
@@ -337,8 +339,9 @@ class TestProductRoutes(TestCase):
         data = response.get_json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(data), len(food_products))
-        
+
     def test_list_by_category_nothing_found(self):
+        """It should return an empty list, if the category does not contain Products"""
         url = BASE_URL + "?category=" + str(Category.FOOD.name)
         response = self.client.get(url)
         data = response.get_json()
@@ -353,15 +356,16 @@ class TestProductRoutes(TestCase):
         total_products = 20
 
         products = self._create_products(total_products)
-        available_products = [p for p in products if p.available == True]
+        available_products = [p for p in products if p.available is True]
 
         url = BASE_URL + "?available=" + str(True)
         response = self.client.get(url)
         data = response.get_json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(data), len(available_products))
-        
+
     def test_list_by_available_nothing_found(self):
+        """It should return an empty list, if no Product has the queried availability"""
         url = BASE_URL + "?available=" + str(False)
         response = self.client.get(url)
         data = response.get_json()
